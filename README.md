@@ -1,0 +1,2 @@
+# dianostico
+Diagnostico Estrategico AxiaCoreHub
