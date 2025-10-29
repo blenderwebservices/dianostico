@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Estratégico AxiaCore Hub</title>
+    <style>
+        /* --- ESTILOS CSS --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #1a5c68;
+            border-bottom: 3px solid #1a5c68;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
+        .step-container {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fcfcfc;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #3b7b85;
+        }
+
+        .option-item {
+            display: block;
+            margin-bottom: 10px;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .option-item:hover {
+            background-color: #e6f7ff;
+        }
+
+        input[type="radio"] {
+            margin-right: 10px;
+            accent-color: #1a5c68;
+        }
+
+        .briefing-input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .briefing-label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .btn-start, .btn-submit {
+            background-color: #1a5c68;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn-start:hover, .btn-submit:hover {
+            background-color: #144952;
+        }
+        
+        .btn-submit:disabled {
+            background-color: #a0c4cd;
+            cursor: not-allowed;
+        }
+
+        #results {
+            margin-top: 30px;
+            padding: 25px;
+            border: 2px solid #3b7b85;
+            border-radius: 8px;
+            background-color: #e8f9fd;
+        }
+
+        #results h2 {
+            color: #1a5c68;
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 1px dashed #3b7b85;
+            padding-bottom: 10px;
+        }
+
+        #results p {
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+
+        #results strong {
+            color: #1a5c68;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Diagnóstico Estratégico de Venta (AxiaCore Hub)</h1>
+
+    <form id="briefing-step" class="step-container" onsubmit="event.preventDefault(); startDiagnosis();">
+        <p class="question-text">Antes de iniciar, por favor proporciona los siguientes datos de contexto de tu negocio:</p>
+        <div>
+            <label for="sector" class="briefing-label">Sector:</label>
+            <input type="text" id="sector" class="briefing-input" required>
+        </div>
+        <div>
+            <label for="industria" class="briefing-label">Industria/Giro:</label>
+            <input type="text" id="industria" class="briefing-input" required>
+        </div>
+        <div>
+            <label for="tamano" class="briefing-label">Tamaño:</label>
+            <input type="text" id="tamano" class="briefing-input" required>
+        </div>
+        <button type="submit" class="btn-start">Iniciar Diagnóstico Conversacional</button>
+    </form>
+
+    <div id="diagnosis-step" class="step-container" style="display: none;">
+        <div id="question-area">
+            </div>
+        <button class="btn-submit" onclick="submitAnswer()" disabled>Siguiente Pregunta</button>
+    </div>
+
+    <div id="results" style="display: none;">
+        <h2>✅ Perfil Estratégico del Negocio</h2>
+        <div id="profile-output">
+            </div>
+    </div>
+</div>
+
+<script>
+    /* --- JAVASCRIPT CORREGIDO --- */
+
+    // Parte 3: Catálogos de Dominio
+    const CATALOGS = {
+        "ARQUETIPO_CATALOG": [
+            { "id": "A1", "name": "Arquetipo de Proximidad: Mi éxito depende de que los clientes que están físicamente cerca me elijan." },
+            { "id": "A2", "name": "Arquetipo de Destino/Evento: Mis clientes viajan o planifican con anticipación para venir a mí por mi oferta única." },
+            { "id": "A3", "name": "Arquetipo Digital/Remoto: Mi negocio opera principalmente en línea; la ubicación del cliente es irrelevante." },
+            { "id": "A4", "name": "Arquetipo de Venta Directa/Distribuida: Mis ventas dependen de una red de vendedores o afiliados." }
+        ],
+        "COMPETENCIA_PROXIMIDAD_CATALOG": [
+            { "id": "CP1", "name": "Monopolio Local: Soy el único en mi zona." },
+            { "id": "CP2", "name": "Moderada: Hay otros en barrios cercanos." },
+            { "id": "CP3", "name": "Intensa: Están en la misma calle o puerta con puerta." }
+        ],
+        "DEMANDA_PROXIMIDAD_CATALOG": [
+            { "id": "DP1", "name": "Principalmente por una urgencia o necesidad inmediata." },
+            { "id": "DP2", "name": "Generalmente por una compra planeada o de rutina." }
+        ],
+        "COMPETENCIA_DESTINO_CATALOG": [
+            { "id": "CD1", "name": "Otras experiencias o destinos en mi misma ciudad/región." },
+            { "id": "CD2", "name": "Destinos similares a nivel nacional." },
+            { "id": "CD3", "name": "Líderes reconocidos a nivel internacional." }
+        ],
+        "ATRACTOR_DESTINO_CATALOG": [
+            { "id": "AD1", "name": "La fuerza y el prestigio de mi marca." },
+            { "id": "AD2", "name": "Una oferta o producto específico que es único en el mercado." },
+            { "id": "AD3", "name": "Una estrategia de precios o promociones muy agresiva." }
+        ],
+        "CANAL_DIGITAL_CATALOG": [
+            { "id": "DI1", "name": "Buscadores (Google, etc.), porque los clientes buscan activamente soluciones." },
+            { "id": "DI2", "name": "Redes Sociales (Instagram, Facebook, etc.), para crear comunidad y generar deseo." },
+            { "id": "DI3", "name": "Publicidad Pagada (Ads), para llegar rápidamente a audiencias específicas." }
+        ],
+        "MODELO_NEGOCIO_DIGITAL_CATALOG": [
+            { "id": "MND1", "name": "eCommerce (vendo productos)." },
+            { "id": "MND2", "name": "SaaS / Suscripción (vendo acceso a una plataforma)." },
+            { "id": "MND3", "name": "Servicios / Consultoría (vendo mi tiempo y experiencia en línea)." }
+        ],
+        "RETO_DISTRIBUIDA_CATALOG": [
+            { "id": "RD1", "name": "Reclutar constantemente nuevos vendedores o afiliados para expandir la red." },
+            { "id": "RD2", "name": "Capacitar y dar herramientas a mi red existente para que vendan más y de manera más efectiva." },
+            { "id": "RD3", "name": "Motivar a la red y gestionar los esquemas de comisiones y pagos." }
+        ],
+        "CICLO_VENTA_DISTRIBUIDA_CATALOG": [
+            { "id": "CVD1", "name": "Es una venta rápida y transaccional." },
+            { "id": "CVD2", "name": "Requiere construir una relación y confianza con el cliente final." }
+        ]
+    };
+
+    // Parte 4: El Árbol de Diagnóstico
+    const DIAGNOSTIC_TREE = {
+        "startNode": "Q1_ARQUETIPO",
+        "nodes": {
+            "Q1_ARQUETIPO": {
+                "questionText": "Para entender la naturaleza de tu negocio, ¿cuál de estos 'Arquetipos' lo describe mejor?",
+                "optionsSource": "ARQUETIPO_CATALOG",
+                "leadsTo": { "router": "R1_ARQUETIPO" }
+            },
+            "Q2_PROXIMIDAD_COMPETENCIA": {
+                "questionText": "Entendido. En tu juego de proximidad, ¿cómo es la competencia en tu área inmediata?",
+                "optionsSource": "COMPETENCIA_PROXIMIDAD_CATALOG",
+                "leadsTo": "Q3_PROXIMIDAD_DEMANDA"
+            },
+            "Q3_PROXIMIDAD_DEMANDA": {
+                "questionText": "Y tus clientes, ¿por qué razón principal entran por tu puerta?",
+                "optionsSource": "DEMANDA_PROXIMIDAD_CATALOG",
+                "leadsTo": null
+            },
+            "Q2_DESTINO_COMPETENCIA": {
+                "questionText": "Comprendido. Como negocio de destino, ¿quiénes consideras que son tus verdaderos competidores?",
+                "optionsSource": "COMPETENCIA_DESTINO_CATALOG",
+                "leadsTo": "Q3_DESTINO_ATRACTOR"
+            },
+            "Q3_DESTINO_ATRACTOR": {
+                "questionText": "Y ¿cuál es el principal 'imán' que atrae a la gente a tu destino?",
+                "optionsSource": "ATRACTOR_DESTINO_CATALOG",
+                "leadsTo": null
+            },
+            "Q2_DIGITAL_CANAL": {
+                "questionText": "Perfecto. En el mundo digital, ¿dónde se libra tu principal batalla por la atención de los clientes?",
+                "optionsSource": "CANAL_DIGITAL_CATALOG",
+                "leadsTo": "Q3_DIGITAL_MODELO"
+            },
+            "Q3_DIGITAL_MODELO": {
+                "questionText": "Y tu oferta principal en línea, ¿qué formato tiene?",
+                "optionsSource": "MODELO_NEGOCIO_DIGITAL_CATALOG",
+                "leadsTo": null
+            },
+            "Q2_DISTRIBUIDA_RETO": {
+                "questionText": "Entendido. En un modelo de venta distribuida, ¿cuál es tu reto operativo más grande día a día?",
+                "optionsSource": "RETO_DISTRIBUIDA_CATALOG",
+                "leadsTo": "Q3_DISTRIBUIDA_CICLO"
+            },
+            "Q3_DISTRIBUIDA_CICLO": {
+                "questionText": "Y el proceso de venta que realiza tu red, ¿cómo es principalmente?",
+                "optionsSource": "CICLO_VENTA_DISTRIBUIDA_CATALOG",
+                "leadsTo": null
+            }
+        },
+        "routing": {
+            "R1_ARQUETIPO": {
+                "A1": "Q2_PROXIMIDAD_COMPETENCIA",
+                "A2": "Q2_DESTINO_COMPETENCIA",
+                "A3": "Q2_DIGITAL_CANAL",
+                "A4": "Q2_DISTRIBUIDA_RETO"
+            }
+        }
+    };
+
+    // Estado global del diagnóstico
+    let diagnosisState = {
+        briefing: {},
+        currentQuestionId: null,
+        answers: {}
+    };
+
+    const questionArea = document.getElementById('question-area');
+    const submitBtn = document.querySelector('.btn-submit');
+    const briefingStep = document.getElementById('briefing-step');
+    const diagnosisStep = document.getElementById('diagnosis-step');
+    const resultsDiv = document.getElementById('results');
+    const profileOutput = document.getElementById('profile-output');
+
+    /**
+     * Inicia el diagnóstico guardando el briefing inicial y mostrando la primera pregunta.
+     * Se llama al enviar el formulario del briefing.
+     */
+    function startDiagnosis() {
+        const sector = document.getElementById('sector').value.trim();
+        const industria = document.getElementById('industria').value.trim();
+        const tamano = document.getElementById('tamano').value.trim();
+
+        // La validación 'required' en el HTML ya maneja los campos vacíos
+        
+        diagnosisState.briefing = { sector, industria, tamano };
+        briefingStep.style.display = 'none';
+        diagnosisStep.style.display = 'block';
+
+        diagnosisState.currentQuestionId = DIAGNOSTIC_TREE.startNode;
+        renderQuestion(diagnosisState.currentQuestionId);
+    }
+
+    /**
+     * Muestra la pregunta actual y sus opciones.
+     * @param {string} questionId - ID del nodo de pregunta.
+     */
+    function renderQuestion(questionId) {
+        const node = DIAGNOSTIC_TREE.nodes[questionId];
+        const options = CATALOGS[node.optionsSource];
+
+        let html = `<p class="question-text">${node.questionText}</p>`;
+        options.forEach(option => {
+            // Añadimos el onclick para manejar la activación del botón
+            html += `
+                <label class="option-item">
+                    <input type="radio" name="answer" value="${option.id}" data-name="${option.name}" onclick="enableSubmit(true)">
+                    ${option.name}
+                </label>
+            `;
+        });
+        
+        questionArea.innerHTML = html;
+        enableSubmit(false); // Deshabilitar hasta que se seleccione una opción
+    }
+
+    /**
+     * Habilita o deshabilita el botón de siguiente.
+     * @param {boolean} enable - true para habilitar, false para deshabilitar.
+     */
+    function enableSubmit(enable) {
+        submitBtn.disabled = !enable;
+    }
+
+    /**
+     * Procesa la respuesta del usuario y avanza o finaliza el diagnóstico.
+     */
+    function submitAnswer() {
+        const selectedRadio = document.querySelector('input[name="answer"]:checked');
+        if (!selectedRadio) {
+            // Esto no debería suceder si el botón está deshabilitado correctamente
+            alert('Por favor, selecciona una opción para continuar.'); 
+            return;
+        }
+
+        const answerId = selectedRadio.value;
+        const answerName = selectedRadio.dataset.name;
+
+        // 1. Guardar la respuesta
+        diagnosisState.answers[diagnosisState.currentQuestionId] = { id: answerId, name: answerName };
+
+        const currentNode = DIAGNOSTIC_TREE.nodes[diagnosisState.currentQuestionId];
+        let nextQuestionId = null;
+
+        // 2. Determinar el siguiente nodo
+        if (currentNode.leadsTo && currentNode.leadsTo.router) {
+            // Caso especial: Router (Solo aplica a Q1_ARQUETIPO)
+            const routerKey = currentNode.leadsTo.router;
+            nextQuestionId = DIAGNOSTIC_TREE.routing[routerKey][answerId];
+        } else if (currentNode.leadsTo) {
+            // Caso general: Siguiente nodo directo
+            nextQuestionId = currentNode.leadsTo;
+        }
+
+        // 3. Navegar o finalizar
+        if (nextQuestionId) {
+            diagnosisState.currentQuestionId = nextQuestionId;
+            renderQuestion(nextQuestionId);
+        } else {
+            // Finalizar: leadsTo es null
+            finishDiagnosis();
+        }
+    }
+
+    /**
+     * Finaliza el protocolo y muestra el Perfil Estratégico.
+     */
+    function finishDiagnosis() {
+        diagnosisStep.style.display = 'none';
+        resultsDiv.style.display = 'block';
+
+        // Obtener la respuesta del Arquetipo (Q1_ARQUETIPO) para el resumen
+        const arquetipo = diagnosisState.answers['Q1_ARQUETIPO'] ? diagnosisState.answers['Q1_ARQUETIPO'].name : 'No identificado';
+
+        let profileHtml = `
+            <h3>Contexto Fáctico</h3>
+            <p><strong>Sector:</strong> ${diagnosisState.briefing.sector}</p>
+            <p><strong>Industria/Giro:</strong> ${diagnosisState.briefing.industria}</p>
+            <p><strong>Tamaño:</strong> ${diagnosisState.briefing.tamano}</p>
+            
+            <h3>Arquetipo Identificado</h3>
+            <p>${arquetipo}</p>
+
+            <h3>Respuestas del Diagnóstico Dinámico</h3>
+        `;
+        
+        // Excluir Q1_ARQUETIPO del sub-diagnóstico, ya que está en 'Arquetipo Identificado'
+        const dynamicAnswers = Object.entries(diagnosisState.answers)
+            .filter(([key]) => key !== 'Q1_ARQUETIPO');
+
+        if (dynamicAnswers.length > 0) {
+            dynamicAnswers.forEach(([questionId, answer]) => {
+                const questionText = DIAGNOSTIC_TREE.nodes[questionId].questionText;
+                profileHtml += `<p><strong>${questionText}</strong> <br> R: ${answer.name}</p>`;
+            });
+        } else {
+             profileHtml += `<p>No se recopilaron preguntas dinámicas adicionales.</p>`;
+        }
+
+        profileOutput.innerHTML = profileHtml;
+    }
+
+</script>
+
+</body>
+</html>
